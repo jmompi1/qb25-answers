@@ -168,16 +168,6 @@ print(dt2)
 
 max(dt2$Liver)
 min(dt2$`Heart - Left Ventricle`)
-  
-  select(Description, `Heart - Left Ventricle`) %>%
-  arrange((`Heart - Left Ventricle`)) %>%
-
-    
-    
-dt %>%
-  filter(`Heart - Left Ventricle` %in% highest_exp_liver$Description)
-penguins %>%
-  filter(species %in% c("Adelie", "Gentoo"))
 
 
 
