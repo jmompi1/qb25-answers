@@ -31,6 +31,34 @@
     #20017 lines have RNA
 
     #code: grep -vc "RNA" GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
-    #output: 2935
-    #2935 lines do not have RNA
+    exp_dict = {}
+for i in range(2, len(header)):  
+    sample_id = header[i]
+    expression_value = data[i]
+    exp_dict[sample_id] = expression_value
+
+#4. exp_file = "GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+with open(exp_file, 'r') as f:
+    f.readline()  
+    f.readline()  
+    header = f.readline().strip().split('\t')  
+    data = f.readline().strip().split('\t')  
+
+
+    exp_dict = {}
+for i in range(2, len(header)):  
+    sample_id = header[i]
+    expression_value = data[i]
+    exp_dict[sample_id] = expression_value
+
+
+my_file = "GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+with open(my_file, 'r') as f:
+    next(f)
+    for line in f:
+        fields = line.strip().split('\t')
+        sampid = fields[0]
+        smtsd = fields[5]  
+        if sampid in exp_dict:
+            print(f"{sampid}\t{exp_dict[sampid]}\t{smtsd}")
 
