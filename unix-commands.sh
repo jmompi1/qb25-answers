@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 #1.
 #code: wc ce11_genes.bed
 #output: 53935 323610 2200094
@@ -18,8 +21,16 @@
         #27309 +
 #there are 26626 features in the negative strands and 27309 features in the positive strands
 
+#3. #code: cut -f7 GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt | tail -n +2 | sort | uniq -c | sort -nr | head -n 3
+    #output: 3288 Whole Blood
+            #1132 Muscle - Skeletal
+            #867 Lung
+    
+    #code: grep -c "RNA" GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+    #output: 20017
+    #20017 lines have RNA
 
-
-
-
+    #code: grep -vc "RNA" GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+    #output: 2935
+    #2935 lines do not have RNA
 
