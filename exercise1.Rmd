@@ -1,45 +1,30 @@
 ---
-title: "exercise1"
-author: "Joy Mompi"
-date: "2025-09-12"
-output: html_document
+title: "exercise2.Rmd"
+output: html_notebook
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-## R Markdown
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-library(tidyverse)
-
-header <- c( "chr", "start", "end", "count" )
-df_kc <- read_tsv("~/qb25-answers/week1/hg19-kc-count.bed", col_names=header )
-
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```
 ```{r}
-#Plotting the gene density 
+#Compare hg19 gene annotations with hg16
+library(tidyverse)
+header <- c( "chr", "start", "end", "count" )
+df_kc19 <- read_tsv("~/qb25-answers/week1/hg19-kc-count.bed", col_names = header)
+df_kc16 <- read_tsv("~/qb25-answers/week1/hg16-kc-count.bed", col_names = header)
+combdf <- bind_rows( df_kc19, df_kc16, .id="assembly" )
 
-ggplot(df_kc, aes(x = df_kc$end, y = df_kc$count))+       
+ggplot(combdf, aes(x = combdf$end, y = combdf$count, color=assembly))+       
   geom_line()+
   facet_wrap(. ~ chr, scales ="free")
 
-ggsave("exercise1.png")
-?facet_wrap
-?scales
+  ggsave("exercise2.png", width = 20, height = 10, units = "in")
 ```
 
-```
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
