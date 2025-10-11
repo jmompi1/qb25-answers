@@ -7,3 +7,5 @@ Each track in IGV depicts the amount of coverage (read depth?) for the respectiv
 
 
 minimap2 -ax map-ont -a ~/Data/References/sacCer3/sacCer3.fa.gz /Users/cmdb/qb25-answers/week2/genomes/rawdata/ERR8562476.fastq > longreads.sam
+
+hisat2 -x /Users/cmdb/qb25-answers/week2/genomes/sacCer3 -U /Users/cmdb/qb25-answers/week2/rna/SRR10143769.fastq -S rna.sam 
