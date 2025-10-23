@@ -7,7 +7,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 setwd("~/qb25-answers/week3")
-library(stringr)
 AF_df <- read_delim("~/qb25-answers/week3/AF.tsv", delim = "\t")
 
 ggplot(AF_df, aes(x= Allele_Frequency)) +
@@ -27,17 +26,17 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-AF_df <- read.csv()
-``
+DP_df <- read_delim("~/qb25-answers/week3/DP.tsv", delim = "\t")
 
-`
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+ggplot(DP_df, aes(x= Read_Depth)) +
+  geom_histogram (bins = 21) +
+  xlim(0,20)
+  labs (x = "Read Depth") +
+  labs (y = "Count") +
+  labs (title = "Distribution of Read Depth")
+  
+#The plot represents the frequency of reads that mapped to each variant in the vcf file. This distribution is skewed right. I'm a bit surprised that the majority of read depths are leaning towards the lower side, since the peak is around 5 reads. I expected the read coverage to be a bit higher overall, but maybe the sequencing technology they used was not as advanced at that time. 
+  
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
