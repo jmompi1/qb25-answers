@@ -53,3 +53,39 @@ with open(input_vcf) as vcf, open(output_file, "w") as out:
         # Write as tab-separated values
         variant_id = f"{chrom}:{pos}"
         out.write(f"{variant_id}\t{af}\n")
+
+
+#2.3
+
+input_vcf = "biallelic.vcf"
+output_file = "DP.tsv"
+
+with open(input_vcf) as vcf, open(output_file, "w") as out:
+    sample_names = []
+    for line in vcf:
+        if line.startswith("##"):
+            continue
+        elif line.startswith("#CHROM"):
+            # Extract sample names from header
+            fields = line.strip().split('\t')
+            sample_names = fields[9:]  # samples start at column 10
+            out.write("Variant_ID\tSample_ID\tRead_Depth\n")
+            continue
+
+        fields = line.strip().split('\t')
+        chrom = fields[0]
+        pos = fields[1]
+        format_keys = fields[8].split(':')
+        sample_values = fields[9:]
+
+        # Find DP index
+        if "DP" not in format_keys:
+            continue
+        dp_index = format_keys.index("DP")
+
+        # Extract DP for each sample
+        for sample_name, sample_data in zip(sample_names, sample_values):
+            sample_fields = sample_data.split(':')
+            dp = sample_fields[dp_index] if len(sample_fields) > dp_index else "NA"
+            variant_id = f"{chrom}:{pos}"
+            out.write(f"{variant_id}\t{sample_name}\t{dp}\n")
