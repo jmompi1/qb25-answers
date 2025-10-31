@@ -5,3 +5,13 @@
 
 
 #Ans (2.3): the slope here is 1.35384, which means there is a stronger correlation between father's age and the number of paternally-inherited dnms. This makes sense because the line seems more fitted. There is a 2.2x10-16 probability that the spread of the number of maternally-inherited dnms is due to random chance (p-value). 
+
+
+
+#Step 2.4 — Predict for a 50.5-year-old father
+#Use the paternal regression model to predict the expected number of paternal DNMs for a father of age 50.5. You are welcome to do this manually or using a built-in function, but show your work in README.md.
+y = mx + b
+num_paternal_inherited_dnms = father_age_slope * paternal_age + y-intercept
+print((1.35384*50.2)+10.32632)
+
+#Ans (2.4): expected number of paternal DNMs is 78.289 ~ 78.
