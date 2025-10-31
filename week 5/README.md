@@ -1,2 +1,3 @@
 #In README.md, answer: 1. What is the “size” (i.e., slope) of this relationship? Interpret the slope in plain language. Does it match your plot? 2. Is the relationship significant? How do you know? Explain the p-value in plain but precise language.
+
 #Ans: the slope is 0.3776, which is the degree to which the number of maternal inherited de novo mutations that can be explained by the moternal age. The p-value is 2.2x10-16, which makes this relationship significant. There is a 2.2x10-16 probability that the spread of the number of maternally-inherited dnms is due to random chance.
