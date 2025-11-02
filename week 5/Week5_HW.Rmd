@@ -99,9 +99,69 @@ step_2_hist <- hist(aau1043_joined_df$num_maternal_inherited_dnms, col=rgb(1,0,0
   hist(aau1043_joined_df$num_paternal_inherited_dnms, col=rgb(0,0,1,0.5), xlim = c(0,120), add=T, xlab = "inheritance of dnms")
 #blue is paternal and pink is maternal
 dev.off()
+# I got the code from https://r-graph-gallery.com/. The main difference is the add=T, which makes the histograms transparent. 
 
-#blue is paternal and pink is maternal
+#Ans (2.6): the mean difference in counts of maternal and paternal dnms is -39.23. On average, an individual will have about 39 more paternally-inherited de novo mutations compared to those that are maternally inherited. It seems to match the plot, because the maternal mean is around 10 and the paternal mean is around 50, so the difference is about 40, which is close to -39.23.The relationship is significant because the p-value is less than 2.2x10^-16.  The is less than a 2.2x10^-16 probability that the difference in means between maternally and paternally inherited dnms = -39.23 if the null hypothesis is true. The null hypothesis is that there is no mean difference between counts of maternal and paternal dnms. 
 
+
+
+
+#Step 3.1 — Pick a TidyTuesday dataset
+#Choose a dataset from the bottom of the TidyTuesday README. Record which one you chose in README.md.
+#(Ans 3.1) I chose spotify_songs.csv
+
+#Step 3.2 — Explore and visualize
+#Generate figures and note any interesting patterns in README.md; save figures as ex4_<something>.png.
+spotifysongs_df <- read_csv("~/qb25-answers/week5/spotify_songs.csv")
+
+#total number of rows = 32833
+#total number of unique artists represented = 10693
+print(length(unique(spotifysongs_df$track_artist)))
+
+#length of songs in general 
+overall_track_lengths <- ggplot(spotifysongs_df, aes(x = duration_ms)) +
+  geom_histogram()
+  ggsave("ex4_overall_track_lengths.png", plot = overall_track_lengths, path = "~/qb25-answers/week5")
+
+#comparing the length of songs in by genre
+tracklength_genre <- ggplot(spotifysongs_df, aes(x = duration_ms)) +
+  geom_histogram() +
+  facet_wrap((. ~ playlist_genre))
+  ggsave("ex4_tracklength_genre.png", plot = tracklength_genre, path = "~/qb25-answers/week5")
+#all genres' track lengths have a peak of around 2e05ms. 
+
+#comparing the tempo of songs by genre
+tempo_genre <- ggplot(spotifysongs_df, aes(x = tempo)) +
+  geom_histogram() +
+  facet_wrap((. ~ playlist_genre))
+  ggsave("ex4_tempo_genre.png", plot = tempo_genre, path = "~/qb25-answers/week5")
+#edm songs are mostly within a very narrow range of tempo, compared to the other genres 
+
+#how much does track length correlate with popularity?
+lm(data = spotifysongs_df, formula = track_popularity ~ 1 + duration_ms) %>%
+  summary()
+#the estimate for track duration(ms) is -5.999e-5, which means track length was negatively correlated with popularity. As track length increases, popularity decreases. 
+
+#how much does tempo correlate with popularity?
+lm(data = spotifysongs_df, formula = track_popularity ~ 1 + tempo) %>%
+  summary()
+#the slope estimate is -.004994, which is a slight negative correlation between track tempo and popularity, but very miniscule. 
+
+#danceability vs. popularity
+lm(data = spotifysongs_df, formula = track_popularity ~ 1 + danceability) %>%
++   summary()
+  
+
+#Step 3.3 — Pose and test a linear-model hypothesis
+#State a hypothesis, fit a linear model, evaluate fit, and report results in README.md.
+
+#Null hypothesis: There is zero correlation or relationship between track duration and popularity. 
+#Hypothesis: tracks with shorter lengths will be more popular. Track length are inversely correlated with popularity. 
+
+lm(data = spotifysongs_df, formula = track_popularity ~ 1 + duration_ms) %>%
+  summary()
+
+#the estimate for track duration(ms) is -5.999e-5, which means track length was negatively correlated with popularity. As track length increases, popularity decreases. 
 
 ```
 
