@@ -103,7 +103,9 @@ dev.off()
 
 #Ans (2.6): the mean difference in counts of maternal and paternal dnms is -39.23. On average, an individual will have about 39 more paternally-inherited de novo mutations compared to those that are maternally inherited. It seems to match the plot, because the maternal mean is around 10 and the paternal mean is around 50, so the difference is about 40, which is close to -39.23.The relationship is significant because the p-value is less than 2.2x10^-16.  The is less than a 2.2x10^-16 probability that the difference in means between maternally and paternally inherited dnms = -39.23 if the null hypothesis is true. The null hypothesis is that there is no mean difference between counts of maternal and paternal dnms. 
 
-
+#running lm(diff ~1)
+lm(data = aau1043_joined_df, num_maternal_inherited_dnms - num_paternal_inherited_dnms ~ 1)
+#The coefficient for the intercept is -39.23, which is equal to what I got for the t test. I interpret this value as the baseline average difference between inherited de novo mutations from the maternal and paternal side. 
 
 
 #Step 3.1 — Pick a TidyTuesday dataset
@@ -162,6 +164,7 @@ lm(data = spotifysongs_df, formula = track_popularity ~ 1 + duration_ms) %>%
   summary()
 
 #the estimate for track duration(ms) is -5.999e-5, which means track length was negatively correlated with popularity. As track length increases, popularity decreases. 
+
 
 ```
 
