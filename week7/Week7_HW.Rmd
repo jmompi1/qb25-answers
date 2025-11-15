@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("~/qb25-answers/week7")
 ```
 
 ## R Markdown
@@ -70,20 +71,53 @@ ex1.3pcaplot <- ggplot(top500_pca_data, aes(PC1, PC2, color=tissue, shape=replic
 #Save this plot to turn in.
 ggsave("ex1.3pcaplot.png", plot = ex1.3pcaplot, path = "~/qb25-answers/week7")
 
-#Examine the PCA plot. Does everything look okay (We wouldn’t ask if it did)?
+#(README, 1.3) Examine the PCA plot. Does everything look okay (We wouldn’t ask if it did)?
+#The points corresponding to each tissue do not seem to cluster together as I much as I expected. 
 
-
-#What does the PCA plot suggest to you about the data? Why?
-
+#(README, 1.3) What does the PCA plot suggest to you about the data? Why?
+#Some of the tissues seem mismatched or incorrectly labeled (LFC.Fe and Fe)
 
 #Fix any problems that the PCA reveals.
+gtex_matrix[ , c(12,13)] <- gtex_matrix[ , c(13,12)]
 
-#What feature explains the first principal component (simply saying “tissue” is not sufficient)?
+gtex_sd <- rowSds(gtex_matrix)
+gtex_sd <- sort(gtex_sd, decreasing = TRUE)
+top_500 <- gtex_sd[1:500]
+top500_matrix <- gtex_matrix[top_500,]
+top500_matrix <- as.matrix(top500_matrix)
+
+transposed_top500_2 <- t(top500_matrix)
+pca_transposed_top500_2 <- prcomp(transposed_top500_2)
+pca_transposed_top500_2$x[1,1:2]
+top500_pca_data_2 = tibble(samples = row.names(transposed_top500_2), PC1= pca_transposed_top500_2$x[,1], PC2 = pca_transposed_top500_2$x[,2])
+top500_pca_data_2 <- top500_pca_data_2%>%
+  separate(samples, into = c("tissue", "replicate"), sep = "_")
+
+ex1.3pcaplot_corrected <- ggplot(top500_pca_data_2, aes(PC1, PC2, color=tissue, shape=replicate)) +
+  geom_point(size=3) +
+  scale_color_discrete()
+
+
+ggsave("ex1.3pcaplot_corrected.png", plot = ex1.3pcaplot_corrected, path = "~/qb25-answers/week7")
+
+
+#(README, 1.3) What feature explains the first principal component (simply saying “tissue” is not sufficient)?
+#Cell type seems to explain the first principal component. Replicates within one cell type have a great degree of variance (and are significantly spaced out)from replicates within other cell types.
+
 
 #Also plot the amount of variance explained by each PC as a bar chart. As always, remember to label your axes.
+top500_pca_summary <- tibble(PC=seq(1,nrow(transposed_top500),1),
+                     sd=summary(pca_transposed_top500)$sdev) %>%
+  mutate(norm_var=sd^2/sum(sd^2)) %>%
+  mutate(cum_var=cumsum(norm_var))
+
+ex1.3_screeplot <- ggplot(top500_pca_summary, aes(x = PC, y = norm_var)) +
+  geom_col()
+  labs(y = "% variance explained")
+print(ex1.3_screeplot)
 
 #Save this plot to turn in.
-
+ggsave("ex1.3_screeplot.png", plot = ex1.3_screeplot, path = "~/qb25-answers/week7")
 
 
 
@@ -94,6 +128,59 @@ ggsave("ex1.3pcaplot.png", plot = ex1.3pcaplot, path = "~/qb25-answers/week7")
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
+#Step 2.1: Averaging and filtering genes by variance
+#You are now going to create a version of the data with each set of replicates averaged. This can be accomplished with the following code that cycles through all 21 samples, selecting every third sample:
+
+combined = gtex_matrix[,seq(1, 21, 3)]
+combined = combined + gtex_matrix[,seq(2, 21, 3)]
+combined = combined + gtex_matrix[,seq(3, 21, 3)]
+combined = combined / 3
+
+#You can now find the standard deviation for each replicate-averaged gene (row). Using these standard deviations, keep only genes with a standard deviation greater than 1. This should ensure that you are not looking at genes with consistent (or absent) expression across all of the samples.
+gtex_matrix_sd <- rowSds(combined)
+
+gtex_matrix_sdabove1 <- combined[gtex_matrix_sd>1, ]
+
+#Step 2.2: K-means clustering genes
+#Using your gene-filtered data, you will be clustering the genes into 12 clusters using k-means clustering. To ensure it is replicable, first set the seed to 42 (set.seed), then perform the clustering. Use the argument nstart=100 to select the best result out of 100 random starting configurations. To get the cluster labels from the cluster object returned by kmeans, use $cluster.
+
+set.seed(42)
+kmeans_results <- kmeans(gtex_matrix_sdabove1, centers = 12, nstart = 100)
+cluster_labels <- kmeans_results$cluster
+
+sorted <- order(cluster_labels)
+
+sorted_gtex_matrix <- gtex_matrix_sdabove1[sorted, ]
+
+#Using the cluster labels, sort the rows of your gene-filtered data matrix and then the cluster labels themselves. Now visualize your clusters by plotting the data as a heatmap, using the labels to color each cluster.
+png("ex2.2_heatmap.png", width=800, height=600)
+
+ex2.2_heatmap <- heatmap(sorted_gtex_matrix, Rowv=NA, Colv=NA, RowSideColors=RColorBrewer::brewer.pal(12,"Paired")[cluster_labels], ylab="Gene")
+
+dev.off()
+
+#Save this plot to turn in.
+
+
+```
+```{r}
+#EXCERCISE 3
+
+#Select two clusters to investigate. For each, get the gene names using rownames , filtering for only genes within the cluster you have selected. Copy these and paste them into the web tool Panther to perform a gene ontology enrichment analysis. Make sure “biological process” is selected and select the correct genome. If your cluster does not have any significant enrichments, select a different cluster.
+GO_form1 <- rownames(gtex_matrix_sdabove1)[cluster_labels == 1]
+GO_form2 <- rownames(gtex_matrix_sdabove1)[cluster_labels == 2]
+
+
+
+
+write.csv(GO_form1[ , -1],"~/qb25-answers/week7/GO_form1.csv")
+write.csv(GO_form2,"~/qb25-answers/week7/GO_form2.csv")
+
+#From the export options on the results page, click “Table” to download the results and submit this file.
+#Do the categories of enrichments make sense? Why?
+
+#(README, 3) For cluster 1, some of the most prominent biological processes are L-arginine biosynthesis, angiotensin maturation, fatty acid beta-oxidation using acyl-CoA oxidase, and organic anion transport. These are all metabolism-related processes, and it makes sense for them to be enriched. I can imagine there are specialized groups of cells in the midgut involved in nutrient uptake, which can include metabolizing fatty acids, carbohydrates, etc. In cluster 2, the major biological processes listed are chorion-containing egg shell formation. I would assume that because the development of egg shells takes place in the gut, and genes that promote this process would be specifically enriched in certain cells of the midgut compared to other cells. 
+
 
 ```
 
