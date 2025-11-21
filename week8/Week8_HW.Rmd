@@ -1,0 +1,135 @@
+---
+title: "Week 8 HW"
+author: "Joy Mompi"
+date: "2025-10-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#Step 1.1: Loading data and importing libraries
+#First, load the DESeq2, tidyverse, and broom libraries, and use the read_delim() function to read the data and metadata into separate tibbles (the tidyverse version of data frames).
+library(tidyverse)
+library(DESeq2)
+library(broom)
+
+#load counts
+wholeblood_counts_df <- read_delim("gtex_whole_blood_counts_downsample.tsv")
+
+
+#load metadata
+gtex_metadata_df <- read_delim("gtex_metadata_downsample.txt")
+
+
+#load 3rd file
+gene_locations_df <- read.delim("~/qb25-answers/week8/gene_locations.txt")
+
+
+#The gene expression file reports individuals (subjects) in columns and genes in rows. Each entry in the table records the number of reads mapping to that particular gene for the whole-blood sample from that particular subject. Use the function column_to_rownames() to move the gene names, which are stored in the first column to instead be stored as rownames. This is a necessary step due to the format that DESeq2 expects the data, whereby the formal entries in the tibble should be solely numeric.
+
+wholeblood_counts_df[1:5,] 
+wholeblood_counts_df <- column_to_rownames(wholeblood_counts_df, var = "GENE_NAME")
+wholeblood_counts_df[1:5,]
+
+
+
+#The metadata table records the sex, age, and cause of death for each sample. Ages are encoded as integers, ranging from 0 to 4 that represent decade-long age intervals, where 0 denotes ages 20-29, 1 denotes ages 30-39, …, and 5 denotes ages 70-79. By keeping encoding this variable as an integer in our model, rather than a categorical variable, we are modeling linear, monotonic relationships between gene expression level and age.
+
+#Peek at the first few rows and columns of the tibbles, just to understand how they are organized and ensure that they were loaded correctly.
+
+gtex_metadata_df[1:5,]
+gtex_metadata_df <- column_to_rownames(gtex_metadata_df, var = "SUBJECT_ID")
+gtex_metadata_df[1:5,]
+
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+#Step 1.2: Create a DESeq2 object
+#It is critical that the columns of the count matrix and the rows of the column data (information about samples) are in the same order. Fortunately, this is already the case for the data we have provided, but it is important to double-check! Write a line or two of code to perform this check.
+gtex_metadata_df[1:5,]
+row.names(gtex_metadata_df) == colnames(wholeblood_counts_df)
+
+ncol(wholeblood_counts_df)
+nrow(gtex_metadata_df)
+
+#Next, load the data into a DESeq2 object using the DESeqDataSetFromMatrix() function. Name this object dds. This function takes three required arguments:
+#countData: the gene expression count matrix (or tibble)
+#colData: the metadata tibble
+#design: the model formula, which uses the linear model notation that we learned from our previous lab on regression, but you can leave off the response variable, since that will always just be the expression of a given gene. For example, if my colData had a variable of interest called CONDITION and another covariate called SMOKING_STATUS, I might want to specify my formula as design = ~ CONDITION + SMOKING_STATUS.
+
+#Replace the brackets below with your code. For your model formula, include the variables SEX, DTHHRDY, and AGE. (The brackets themselves can be removed).
+
+# load DESeq2 object
+
+gtex_dds <- DESeqDataSetFromMatrix(countData = wholeblood_counts_df,
+                              colData = gtex_metadata_df,
+                              design = ~ SEX + DTHHRDY + AGE)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+#Step 1.3: Normalization and PCA 
+#As we did last week, we will want to apply a variance stabilizing transformation (VST) before performing principal component analysis, which has the effect of giving genes with different total expression levels more equal weights. Use the vst() function to apply VST to your DESeq2 object, storing it in a new variable called vsd (for variance-stabilized data).
+
+gtex_vsd <- vst(gtex_dds)
+
+#Now apply the plotPCA() function to your VST-normalized data. Perform this step three separate times, each time providing a different value to the intrgroup = argument to color the points by various variables in your metadata. Save your plots as PNG files and include them in your submission.
+
+plotPCA_colorbysex(gtex_vsd, intgroup = "SEX")
+plotPCA_colorbyage(gtex_vsd, intgroup = "AGE")
+plotPCA_(gtex_vsd, intgroup = "DTHHRDY")
+
+
+#What proportion of variance in the gene expression data is explained by each of the first two principal components? Which principal components appear to be associated with which subject-level variables? Interpret these patterns in your own words and record your answers as a comment in your code.
+
+#(Ans 1.3) The first principal component explains 48% of the variance, while the second principal component explains 7% of the variance. It seems like death classification is associated with the first principal component, while age is associated with the second component. I can imagine the whole blood expression values could vary a lot depending on whether they died of natural causes or from a a ondition that required them to be put on a ventilator. Especially those who did not pass from natural causes, likely had specific condition that was marked by particular changes in gene expression. Age also makes sense as a factor, since there are changes to gene expression as one gets older.
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#Exercise 2: Perform differential expression analysis
+#Step 2.1: Perform a “homemade” test for differential expression between the sexes
+#You’re curious whether any genes are differentially expressed between sexes (in whole blood). Before you do the DE analysis the “right” way with DESeq2, you’re first going to perform your own naive “homemade” analysis to get an idea of what DESeq2 is doing behind the scenes at a basic level. This will involve regressing expression quantifications from GTEx onto sample sex, and identifying genes with significant differences in expression between sexes. We will use the VST-normalized data for this test, but note that in our later analyses, we will go back to the raw counts!
+
+#As a first step, we can use the code below to extract the VST expression matrix and bind it to the metadata, such that the whole data frame can be used as input to a regression model:
+
+gtex_vsd_df <- assay(gtex_vsd) %>%
+  t() %>%
+  as_tibble()
+
+gtex_vsd_df <- bind_cols(gtex_metadata_df, gtex_vsd_df)
+#For example, we can test for differential expression of the gene WASH7P by running the following code:
+
+m1 <- lm(formula = WASH7P ~ DTHHRDY + AGE + SEX, data = gtex_vsd_df) %>%
+  summary() %>%
+  tidy()
+print(m1)
+#Does WASH7P show significant evidence of sex-differential expression (and if so, in which direction)? Explain your answer.
+
+#(Ans 2.1). WASH7P does not show significant evidence of differential expression, becuase the p-value is around .279, which means there is a 27.9% probability that the null hypothesis is true, which is that there are no differences in WASH7P expression as a result of sex.
+
+#Now repeat your analysis for the gene SLC25A47. Does this gene show evidence of sex-differential expression (and if so, in which direction)? Explain your answer.
+
+m2 <- lm(formula = SLC25A47 ~ DTHHRDY + AGE + SEX, data = gtex_vsd_df) %>%
+  summary() %>%
+  tidy()
+print(m2)
+
+#(Ans 2.1)Yes, there is evidence of sex-differential expression of SLC25A47, since the p-value is about .026. There is a 2.6% chance the null hypothesis is true given the results. It seems that there is higher SLC25A47 expression in males compared to female subjects.
+
+```
+```{r}
+
+```
+
