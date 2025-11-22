@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+setwd("~/qb25-answers/week8")
 #Step 1.1: Loading data and importing libraries
 #First, load the DESeq2, tidyverse, and broom libraries, and use the read_delim() function to read the data and metadata into separate tibbles (the tidyverse version of data frames).
 library(tidyverse)
@@ -83,11 +84,17 @@ You can also embed plots, for example:
 gtex_vsd <- vst(gtex_dds)
 
 #Now apply the plotPCA() function to your VST-normalized data. Perform this step three separate times, each time providing a different value to the intrgroup = argument to color the points by various variables in your metadata. Save your plots as PNG files and include them in your submission.
+png(file = "plotPCA_colorbysex.png")
+plotPCA(gtex_vsd, intgroup = "SEX")
+dev.off()
 
-plotPCA_colorbysex(gtex_vsd, intgroup = "SEX")
-plotPCA_colorbyage(gtex_vsd, intgroup = "AGE")
-plotPCA_(gtex_vsd, intgroup = "DTHHRDY")
+png(file = "plotPCA_colorbyage.png")
+plotPCA(gtex_vsd, intgroup = "AGE")
+dev.off()
 
+png(file = "plotPCA_colorbydeathcondition.png")
+plotPCA(gtex_vsd, intgroup = "DTHHRDY")
+dev.off()
 
 #What proportion of variance in the gene expression data is explained by each of the first two principal components? Which principal components appear to be associated with which subject-level variables? Interpret these patterns in your own words and record your answers as a comment in your code.
 
@@ -128,8 +135,124 @@ print(m2)
 
 #(Ans 2.1)Yes, there is evidence of sex-differential expression of SLC25A47, since the p-value is about .026. There is a 2.6% chance the null hypothesis is true given the results. It seems that there is higher SLC25A47 expression in males compared to female subjects.
 
+
+
+
+
+
 ```
 ```{r}
+#Step 2.2: Perform differential expression analysis “the right way” with DESeq2
+#Now apply the DESeq() function to fit the regression model that you previously specified in your design = argument to each gene in the dataset. This function is a wrapper function that actually performs several different steps. Note that the function should be run on the original un-normalized count data (dds) rather than the data that underwent VST. This is because DESeq2() is designed to model the counts themselves and already includes a step to estimate library sizes (i.e., the total amount of data per sample) and correct for this in the model. Store the results back in the same object, dds.
 
+gtex_dds <- DESeq(gtex_dds)
+
+
+
+```
+
+```{r}
+#Step 2.3: Extract and interpret the results for sex differential expression
+#Results of this differential expression analysis can be extracted using the results() function. By default, this function will focus on whatever variable was specified last in your design = formula, but while controlling for all of the other covariates listed in the model formula. You can override the default behavior and tell results() to focus on any variable of interest that was included in that formula. For example, if my original model formula was design = ~ CONDITION + SMOKING_STATUS, and CONDITION had the levels treatment and control, I could extract differential expression results for CONDITION (controlling for SMOKING_STATUS) and store it in a tibble using the following code.
+
+#Extract the differential expression results for the variable SEX.
+
+gtex_res <- results(gtex_dds, name = "SEX_male_vs_female") %>%
+  as_tibble(rownames = "GENE_NAME")
+?results
+#The padj column of results reports the FDR-adjusted p-value (i.e., “q-value”). The rows with a padj < 0.1 are the genes that are differentially expressed at an FDR of 10%. A lot of rows will have missing padj values. This is because DESeq2 does a filtering step to remove genes that it thinks have a low probability of being DE, and only performs FDR correction for the set of genes it does not filter out. You can ignore genes with missing padj values.
+
+#How many genes exhibit significant differential expression between males and females at a 10% FDR?
+gtex_res %>%
+  filter(padj < 0.1) %>%
+    nrow()
+#(Ans) 262 genes have differential expression between males and females at 10% false discovery rate.
+
+#Now load the mappings of genes to chromosomes, which have already downloaded from Dropbox (see top of page). Merge these data with your differential expression results using the left_join() function, setting by = GENE_ID (i.e., the shared column on which you want to join). Order the merged tibble by padj, from smallest to largest.
+
+gene_locations_df <- read.delim("~/qb25-answers/week8/gene_locations.txt")
+?left_join()
+gtex_res <- gtex_res %>%
+  left_join(gene_locations_df, gtex_res, by = "GENE_NAME")
+
+?arrange()
+gtex_res <- arrange(gtex_res, padj)
+
+
+#Examine your top hits. Which chromosomes encode the genes that are most strongly upregulated in males versus females, respectively? Are there more male-upregulated genes or female-upregulated genes near the top of the list? Interpret these results in your own words.
+
+#(Ans) The genes that are most up-regulated in males vs females are located on Chromosome Y, then X, and there are more male-upregulated genes near the top of the list.The Y chromosome is specific to males, so it makes sense that a lot of the sex-mediated variation in expression is due to this. Also, males have only one X chromosome, so they are more prone to X-linked disorders if they have a disease variant in a gene located on X. This could possibly influence the high representation in the reuslts. 
+
+
+#Examine the results for the two genes (WASH7P and SLC25A47) that you had previously tested with the basic linear regression model in step 2.1. Are the results broadly consistent?
+gtex_res %>%
+  filter(GENE_NAME == "WASH7P")
+#(Ans) Here the p-value I calculated with the linear model was .279 while the adjusted p-value here is .989. It is now even more insignificant after the adjustment for false discovery rate.
+gtex_res %>%
+  filter(GENE_NAME == "SLC25A47")
+#(Ans) The old p-value with the linear model was .026, while the adjusted p-valye is 8.32e-7, so adjusting for false discovery rate enhanced the significance. 
+
+#In your written interpretation of results, add a short reflection (2–3 sentences) on how your analysis illustrates the trade-off between false positives and false negatives. For example, what happens if you use a very stringent FDR threshold (e.g., 1 %) versus a lenient one (e.g., 20 %)? Which type of error (false positive or false negative) would you expect to increase or decrease under each scenario? Briefly comment on how sample size and effect size might influence the power of your analysis to detect truly differentially expressed genes.
+
+#(Ans) If I set the FDR to a higher one like 20%, I'm saying that 20% of the time I reject the null, I expect the null to actually be true. So A large percentage of my significant findings would be "non significant". If the FDR is more stringent, like 1%, then I expect false negatives to increase and false positives to decrease. With a higher FDR, I believe false negatives would decrease and false positives would increase. A lower sample size would give less confidence in true rejections of the mean, so type I errors would increase. Lower effect size could distort the proportion of times one doesn't reject the null hypothesis, when there atcually is siginifant gene expression levels. 
+
+```
+
+```{r}
+#Step 2.4: Extract and interpret the results for differential expression by death classification
+#Now repeat your analysis from step 2.2 above, but focusing on death classification as your variable of interest. This can be accomplished with the results() function, specifying the argument name = "DTHHRDY_ventilator_case_vs_fast_death_of_natural_causes".
+
+gtex_res2 <- results(gtex_dds, name = "DTHHRDY_ventilator_case_vs_fast_death_of_natural_causes") %>%
+  as_tibble(rownames = "GENE_NAME")
+
+gtex_res2 %>%
+  filter(padj < 0.1) %>%
+    nrow()
+#How many genes are differentially expressed according to death classification at a 10% FDR?
+#16069 genes
+```
+
+```{r}
+#Step 2.5: Estimating a false positive rate under the null hypothesis
+#To better understand what a false positive looks like in practice, repeat your differential expression analysis but first randomly permute (i.e., shuffle) the sex column from the metadata. Then rerun the DESeq2 analysis using this permuted variable.
+
+gtex_metadata_sh_df <- gtex_metadata_df
+gtex_metadata_sh_df$SEX <- sample(gtex_metadata_sh_df$SEX)
+  
+
+gtex_dds_sh <- DESeqDataSetFromMatrix(countData = wholeblood_counts_df,
+                              colData = gtex_metadata_sh_df,
+                              design = ~ SEX + DTHHRDY + AGE)
+
+gtex_dds_sh <- DESeq(gtex_dds_sh)
+
+gtex_res_sh <- results(gtex_dds_sh, name = "SEX_male_vs_female") %>%
+  as_tibble(rownames = "GENE_NAME")
+
+
+#How many genes appear “significant” in this permuted analysis at a 10 % FDR? These are, by definition, false positives, because the labels no longer correspond to real biological sex. Compare this number to the count from your real (non-permuted) analysis. What does this suggest about how well the FDR threshold controls the expected rate of false discoveries in large-scale RNA-seq experiments?
+gtex_res_sh %>%
+  filter(padj < 0.1) %>%
+    nrow()
+
+#(Ans) Only 3 genes appear significant here, compared to 262 in the non-permuted version. I can assume that setting a fdr at 10% does an accurate job of detecting the proportion of false positive rates in our results.  
+```
+```{r}
+#Exercise 3: Visualization
+#Use ggplot2 to create a “Volcano” plot depicting your differential expression results from Exercise 2.3. A volcano plot is a scatter plot, where the x-axis shows the log2FoldChange and the y-axis shows the -log10(padj).
+#Highlight the genes that are significant at a 10% FDR AND for which the absolute value of the log2FoldChange is greater than 1 in a separate color.
+threshold <- .1
+threshold2 <- 1
+#got the above code from copilot, where it assigns values to a threshold and input them into my plot 
+
+volcano_plot <- ggplot(data = gtex_res, aes(x = log2FoldChange, y = -log10(padj), color = gtex_res$padj < threshold & gtex_res$log2FoldChange > threshold2)) + 
+  geom_point() +
+  xlim(-10, 10)
+
+  
+#Highlight the genes that are significant at a 10% FDR AND for which the absolute value of the log2FoldChange is greater than 1 in a separate color.
+
+#Output this plot to a .png that you will upload with your assignment.
+ggsave("volcano_plot.png", plot = volcano_plot, path = "~/qb25-answers/week8")
 ```
 
