@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#used chatgpt for help
 
 import sys
 from fasta import readFASTA
