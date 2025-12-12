@@ -17,3 +17,8 @@ In your simulation, how much of the genome has not been sequenced (has 0x covera
 How well does this match Poisson expectations? How well does the normal distribution fit the data?
 #Still, less than 20% of the genome has 0x coverage. The data don't ft the normal or Poisson distributions, where the coverage is generally expected to be higher (higher frequency of higher coverage). 
 
+1.6
+In your README.md, answer the following questions:
+In your simulation, how much of the genome has not been sequenced (has 0x coverage)?
+How well does this match Poisson expectations? How well does the normal distribution fit the data?
+#The normal and poisson distributions show zero read coverage as across the board, since they're both straight horizontal lines at zero. 
