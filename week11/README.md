@@ -22,3 +22,11 @@ In your README.md, answer the following questions:
 In your simulation, how much of the genome has not been sequenced (has 0x coverage)?
 How well does this match Poisson expectations? How well does the normal distribution fit the data?
 #The normal and poisson distributions show zero read coverage as across the board, since they're both straight horizontal lines at zero. 
+
+Step 2.5
+Assume that the maximum number of occurrences of any 3-mer in the actual genome is five. Using your graph from Step 2.4, write one possible genome sequence that would produce these reads. Record your answer in your README.md.
+#TTCATTCTTATTGATTT
+
+Step 2.6
+In a few sentences, what would it take to accurately reconstruct the sequence of the genome? Record your answer in your README.md.
+#One would need longer kmers, to get a higher amount of coverage. They should be long enough so that reads containing the same sequences can be mapped to the appropriate locations in the genome. 
