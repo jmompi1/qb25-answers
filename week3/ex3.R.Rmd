@@ -26,7 +26,7 @@ A0162_chr2 <- gtlong_df%>%
   filter(Sample_ID == "A01_62") %>%
     filter(Chromosome == "chrII")
 
-A0162_chr2_fig <- ggplot(A0162_chr2, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+A0162_chr2_fig <- ggplot(A0162_chr2, aes(x=Position, y=Sample_ID, color = as.factor(Genotype)))+
   geom_point()
 
 ggsave(plot = A0162_chr2_fig, path = "~/qb25-answers/week3", filename = "A0162_chr2_fig.png")
@@ -47,15 +47,16 @@ You can also embed plots, for example:
 A0162 <- gtlong_df%>%
   filter(Sample_ID == "A01_62")
 
-A0162_fig <- ggplot(A0162, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+A0162_fig <- ggplot(A0162, aes(x=Position, y=Sample_ID, color = as.factor(Genotype))) +
   geom_point()+
   facet_grid(. ~ Chromosome, scales = "free_x", space = "free_x")
 
-gtlong_fig <- ggplot(gtlong_df, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+gtlong_fig <- ggplot(gtlong_df, aes(x=Position, y=Sample_ID, color = as.factor(Genotype))) +
   geom_point()+
   facet_grid(. ~ Chromosome, scales = "free_x", space = "free_x")
 
 ggsave(plot = gtlong_fig, path = "~/qb25-answers/week3", filename = "gtlong_fig.png")
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
