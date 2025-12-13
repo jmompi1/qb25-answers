@@ -1,0 +1,61 @@
+---
+title: "Untitled"
+author: "Joy Mompi"
+date: "2025-12-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+#Step 3.3: Visualize the ancestry of one sample and one chromosome
+#For a chromosome chrII of sample A01_62, create a figure where the x axis is the position and colors indicate whether the genotype was a 0 or a 1. Make sure to convert the genotype to a factor variable.
+setwd("~/qb25-answers/week3")
+
+gtlong_df <- read.table("gt_long.txt", header = TRUE)
+
+A0162_chr2 <- gtlong_df%>%
+  filter(Sample_ID == "A01_62") %>%
+    filter(Chromosome == "chrII")
+
+A0162_chr2_fig <- ggplot(A0162_chr2, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+  geom_point()
+
+ggsave(plot = A0162_chr2_fig, path = "~/qb25-answers/week3", filename = "A0162_chr2_fig.png")
+
+#Question 3.2: Do you notice any patterns? What do the transitions indicate?
+#the ends of the chromosome we inherited from the wine strain, as they fell under "1". While there is a chunk in the middle of chr II that is inherited from the lab strain (0). This means there was a recombination event, with breakpoints appearing where the genotype switches from one parental strain to the other. 
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+#Step 3.4: Expand your visualization
+#Now use facet_grid to plot all chromosomes for sample A01_62. Use the scales = "free_x" and space = "free_x" options to allow for different x-axis scales for different chromosomes. Extend your plot to consider all samples. Note that different samples do not need their own facets, but can simply be arranged along the y axis (which can accept variables that are not numeric!).
+
+A0162 <- gtlong_df%>%
+  filter(Sample_ID == "A01_62")
+
+A0162_fig <- ggplot(A0162, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+  geom_point()+
+  facet_grid(. ~ Chromosome, scales = "free_x", space = "free_x")
+
+gtlong_fig <- ggplot(gtlong_df, aes(x=Position, y=as.factor(Genotype), color = Genotype)) +
+  geom_point()+
+  facet_grid(. ~ Chromosome, scales = "free_x", space = "free_x")
+
+ggsave(plot = gtlong_fig, path = "~/qb25-answers/week3", filename = "gtlong_fig.png")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
